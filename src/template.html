@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Template Darwin Core de fauna</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Layout: uma pergunta por vez, opções em cards; ao final, resumo das abas e botão de download */
+  --bg: #f3f5f4;
+  --surface: #ffffff;
+  --ink: #17211d;
+  --muted: #5d6a64;
+  --line: #d6ddd9;
+  --accent: #1b4d3e;
+  --accent-soft: #e0ece7;
+  --req: #1b4d3e; --opt: #5c8a7b; --auto: #8a938f;
+  --font-body: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101614; --surface: #18201d; --ink: #e2eae6; --muted: #96a49d; --line: #2b3732;
+    --accent: #72c3a8; --accent-soft: #1c322a; --req: #72c3a8; --opt: #4f8a77; --auto: #7d8883; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101614; --surface: #18201d; --ink: #e2eae6; --muted: #96a49d; --line: #2b3732;
+  --accent: #72c3a8; --accent-soft: #1c322a; --req: #72c3a8; --opt: #4f8a77; --auto: #7d8883; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--font-body); }
+h1, h2 { text-wrap: balance; margin: 0; font-weight: 600; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.wrap { max-width: 880px; margin: 0 auto; padding: 28px 20px 48px; display: flex; flex-direction: column; gap: 20px; }
+header { display: flex; flex-direction: column; gap: 4px; }
+header h1 { font-size: 21px; }
+header p { margin: 0; color: var(--muted); font-size: 14px; }
+
+#progresso svg { display: block; width: 100%; height: 34px; }
+
+.pergunta { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+.pergunta .q { display: flex; flex-direction: column; gap: 4px; }
+.pergunta .num { font: 500 12px var(--font-mono); color: var(--muted); }
+.pergunta h2 { font-size: 22px; }
+.pergunta .sub { margin: 0; color: var(--muted); }
+.opcoes { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.opcoes.duas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.op { position: relative; text-align: left; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 14px 40px 14px 14px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; transition: border-color .12s, background .12s; }
+.op:hover { border-color: var(--muted); }
+.op .t { font-weight: 600; }
+.op .d { font-size: 13px; color: var(--muted); }
+.op .marca { position: absolute; top: 14px; right: 14px; width: 18px; height: 18px; border: 1.5px solid var(--muted); border-radius: 50%; display: grid; place-items: center; font-size: 11px; color: var(--surface); }
+.op.multi .marca { border-radius: 4px; }
+.op[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.op[aria-pressed="true"] .marca { background: var(--accent); border-color: var(--accent); }
+.op[aria-pressed="true"] .marca::after { content: "✓"; }
+
+.nav { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 9px 18px; cursor: pointer; font-weight: 500; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+
+.respostas { display: flex; flex-wrap: wrap; gap: 6px; }
+.resp { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 3px 10px 3px 4px; font-size: 13px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.resp .k { font: 500 11px var(--font-mono); background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 1px 7px; }
+
+.abas { display: flex; flex-direction: column; gap: 14px; }
+.aba h3 { margin: 0 0 6px; font: 600 14px var(--font-mono); display: flex; gap: 10px; align-items: baseline; }
+.aba h3 span { font: 400 12px var(--font-body); color: var(--muted); }
+.cols { display: flex; flex-wrap: wrap; gap: 4px; }
+.col { font: 12px var(--font-mono); padding: 3px 8px; border-radius: 4px; color: #fff; white-space: nowrap; cursor: help; }
+.legenda { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--muted); }
+.legenda i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.dica { font-size: 13px; color: var(--muted); border-left: 3px solid var(--accent); padding: 2px 0 2px 12px; margin: 0; }
+.painel-arvore { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 4px; }
+.painel-arvore h3 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 500; }
+.painel-arvore p { margin: 0 0 8px; font-size: 13px; color: var(--muted); }
+#arvore { overflow-x: auto; }
+#arvore svg { display: block; font-family: var(--font-body); }
+.op.outro { border-style: dashed; }
+.dicas { display: flex; flex-direction: column; gap: 6px; }
+.status { font-size: 13px; color: var(--muted); min-height: 1.4em; margin: 0; }
+@media (max-width: 520px) { .opcoes.duas { grid-template-columns: 1fr; } .pergunta { padding: 18px; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Template Darwin Core para dados de fauna</h1>
+    <p>Responda às perguntas para gerar a planilha modelo do seu estudo.</p>
+  </header>
+  <div id="progresso" aria-hidden="true"></div>
+  <section id="cartao" aria-live="polite"></section>
+  <div class="respostas" id="respostas" aria-label="Respostas dadas"></div>
+  <div class="painel-arvore">
+    <h3>Árvore de decisão</h3>
+    <p>Cada resposta abre apenas os ramos relevantes. Clique em um ramo para mudar a escolha.</p>
+    <div id="arvore"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+/*GEN*/
+</script>
+<script>
+const resp = {};
+let atual = 0;
+const COR = { req: "var(--req)", opt: "var(--opt)", auto: "var(--auto)" };
+
+function rotuloResposta(n) {
+  const ops = n.opcoes(resp);
+  if (n.tipo === "varios") { const t = ops.filter((o) => resp[n.id].includes(o.v)).map((o) => o.t); return t.length > 2 ? `${t.length} selecionados` : t.join(", "); }
+  return (ops.find((o) => o.v === resp[n.id]) || {}).t;
+}
+function responder(n, v) {
+  const antes = resp[n.id];
+  resp[n.id] = v;
+  if (antes !== v) podar(resp);
+  atual = fluxo(resp).indexOf(NOS[n.id]) + 1;
+  render();
+}
+
+function progresso(caminho) {
+  const n = caminho.length + 1;
+  const svg = d3.select("#progresso").selectAll("svg").data([0]).join("svg");
+  const w = svg.node().getBoundingClientRect().width || 800;
+  const x = d3.scalePoint().domain(d3.range(n)).range([12, w - 12]);
+  svg.selectAll("line.base").data([0]).join("line").attr("class", "base").attr("x1", x(0)).attr("x2", x(n - 1)).attr("y1", 17).attr("y2", 17).attr("stroke", "var(--line)").attr("stroke-width", 2);
+  svg.selectAll("line.feito").data([0]).join("line").attr("class", "feito").attr("x1", x(0)).attr("x2", x(Math.min(atual, n - 1))).attr("y1", 17).attr("y2", 17).attr("stroke", "var(--accent)").attr("stroke-width", 2);
+  svg.selectAll("circle").data(d3.range(n)).join("circle").attr("cx", (i) => x(i)).attr("cy", 17).attr("r", (i) => (i === atual ? 8 : 5))
+    .attr("fill", (i) => (i < atual ? "var(--accent)" : i === atual ? "var(--surface)" : "var(--line)"))
+    .attr("stroke", (i) => (i === atual ? "var(--accent)" : "none")).attr("stroke-width", 2.5);
+}
+
+function trilha(caminho) {
+  const feitos = caminho.filter((n, i) => i < atual && respondido(n, resp));
+  const b = d3.select("#respostas").selectAll("button").data(feitos, (n) => n.id).join((e) => {
+    const x = e.append("button").attr("type", "button").attr("class", "resp");
+    x.append("span").attr("class", "k"); x.append("span").attr("class", "v"); return x;
+  });
+  b.attr("title", "Alterar esta resposta").on("click", (e, n) => { atual = fluxo(resp).indexOf(n); render(); });
+  b.select(".k").text((n) => n.rotulo);
+  b.select(".v").text(rotuloResposta);
+}
+
+// ---- Árvore de decisão (d3.tree): ramos de classificação, caminho escolhido em destaque ----
+const NIVEIS = ["meio", "grupo", "porte", "registro"];
+function dadosArvore(caminho) {
+  const raiz = { nome: "Início", estado: "on", children: [] };
+  let pai = raiz;
+  for (const id of NIVEIS) {
+    const n = caminho.find((x) => x.id === id);
+    if (!n) continue;
+    const filhos = n.opcoes(resp).map((o) => ({ nome: o.t, no: n, v: o.v, estado: resp[id] == null ? "aberto" : resp[id] === o.v ? "on" : "off" }));
+    pai.children = filhos;
+    const esc = filhos.find((f) => f.estado === "on");
+    if (!esc) return raiz;
+    pai = esc;
+  }
+  const E = caminho.completo ? estrutura(resp) : null;
+  pai.children = [{ nome: E ? "Template" : "…", estado: E ? "fim" : "aberto" }];
+  return raiz;
+}
+function arvore(caminho) {
+  const root = d3.hierarchy(dadosArvore(caminho));
+  const dx = 26, gap = 34;
+  d3.tree().nodeSize([dx, 1])(root);
+  const box = d3.select("#arvore"); box.selectAll("*").remove();
+  const svg = box.append("svg").attr("role", "img").attr("aria-label", "Árvore de decisão com o caminho escolhido");
+  // mede os rótulos para posicionar cada nível logo após o rótulo mais largo do nível anterior
+  const medidor = svg.append("g").attr("font-size", 12).attr("font-weight", 600);
+  const larg = [];
+  root.each((d) => { const t = medidor.append("text").text(d.data.nome); larg[d.depth] = Math.max(larg[d.depth] || 0, t.node().getComputedTextLength()); d.w = t.node().getComputedTextLength(); });
+  medidor.remove();
+  const inicio = [0]; larg.forEach((w, k) => (inicio[k + 1] = inicio[k] + w + gap));
+  root.each((d) => (d.y = inicio[d.depth]));
+  let x0 = Infinity, x1 = -Infinity; root.each((d) => { x0 = Math.min(x0, d.x); x1 = Math.max(x1, d.x); });
+  const largura = inicio[larg.length] + 10, altura = x1 - x0 + dx * 2;
+  svg.attr("viewBox", [-10, x0 - dx, largura, altura]).attr("width", largura).attr("height", altura);
+  const ativo = (e) => e === "on" || e === "fim";
+  const cor = (e) => (ativo(e) ? "var(--accent)" : e === "aberto" ? "var(--muted)" : "var(--line)");
+  svg.append("g").attr("fill", "none").selectAll("path").data(root.links()).join("path")
+    .attr("d", (l) => d3.linkHorizontal()({ source: [l.source.y + 9 + l.source.w + 6, l.source.x], target: [l.target.y - 6, l.target.x] }))
+    .attr("stroke", (l) => cor(l.target.data.estado)).attr("stroke-width", (l) => (ativo(l.target.data.estado) ? 2 : 1.2));
+  const no = svg.append("g").selectAll("g").data(root.descendants()).join("g").attr("transform", (d) => `translate(${d.y},${d.x})`)
+    .style("cursor", (d) => (d.data.no ? "pointer" : "default"))
+    .on("click", (e, d) => { if (d.data.no) responder(d.data.no, d.data.v); });
+  no.append("circle").attr("r", (d) => (ativo(d.data.estado) ? 5 : 3.5))
+    .attr("fill", (d) => (d.data.estado === "aberto" ? "var(--surface)" : cor(d.data.estado))).attr("stroke", (d) => cor(d.data.estado)).attr("stroke-width", 1.5);
+  no.append("text").attr("x", 9).attr("dy", "0.32em").attr("font-size", 12)
+    .attr("font-weight", (d) => (ativo(d.data.estado) ? 600 : 400))
+    .attr("fill", (d) => (d.data.estado === "off" ? "var(--muted)" : "var(--ink)"))
+    .text((d) => d.data.nome)
+    .append("title").text((d) => (d.data.no ? "Escolher esta opção" : ""));
+}
+
+function telaPergunta(c, n, i) {
+  const card = c.append("div").attr("class", "pergunta");
+  const cab = card.append("div").attr("class", "q");
+  cab.append("span").attr("class", "num").text(`Pergunta ${i + 1} · ${n.rotulo}`);
+  cab.append("h2").text(n.t);
+  cab.append("p").attr("class", "sub").text(n.sub);
+  const ops = n.opcoes(resp);
+  const sel = (o) => (n.tipo === "varios" ? (resp[n.id] || []).includes(o.v) : resp[n.id] === o.v);
+  const b = card.append("div").attr("class", "opcoes" + (ops.length === 2 ? " duas" : "")).attr("role", "group")
+    .selectAll("button").data(ops).join("button").attr("type", "button")
+    .attr("class", (o) => "op" + (n.tipo === "varios" ? " multi" : "") + (o.v === OUTRO || /^OUT_/.test(o.v) ? " outro" : ""))
+    .attr("aria-pressed", sel)
+    .on("click", (e, o) => {
+      if (n.tipo === "varios") {
+        const a = resp[n.id] || (resp[n.id] = []); const k = a.indexOf(o.v);
+        if (k >= 0) a.splice(k, 1); else a.push(o.v);
+        if (!a.length) delete resp[n.id];
+        podar(resp); render();
+      } else responder(n, o.v);
+    });
+  b.append("span").attr("class", "marca");
+  b.append("span").attr("class", "t").text((o) => o.t);
+  b.append("span").attr("class", "d").text((o) => o.d);
+  const nav = card.append("div").attr("class", "nav");
+  nav.append("button").attr("type", "button").attr("class", "btn").text("Voltar").property("disabled", i === 0).on("click", () => { atual--; render(); });
+  if (n.tipo === "varios" || respondido(n, resp))
+    nav.append("button").attr("type", "button").attr("class", "btn primary").text("Continuar").property("disabled", !respondido(n, resp)).on("click", () => { atual++; render(); });
+}
+
+function telaFinal(c) {
+  const E = estrutura(resp);
+  const card = c.append("div").attr("class", "pergunta");
+  const cab = card.append("div").attr("class", "q");
+  cab.append("span").attr("class", "num").text("Pronto");
+  cab.append("h2").text(`Template de ${E.grupo.nome}`);
+  cab.append("p").attr("class", "sub").text("A planilha terá as abas abaixo, com os termos Darwin Core no cabeçalho. Passe o mouse sobre um termo para ver a orientação que vai no comentário da célula.");
+  const leg = card.append("div").attr("class", "legenda");
+  [["Obrigatório", "req"], ["Recomendado", "opt"], ["Automático", "auto"]].forEach(([t, k]) => leg.append("span").html(`<i style="background:${COR[k]}"></i>${t}`));
+  const abas = card.append("div").attr("class", "abas").selectAll("div").data(Object.entries(E.abas)).join("div").attr("class", "aba");
+  const h = abas.append("h3"); h.append("text").text(([a]) => a);
+  h.append("span").text(([a, cs]) => `${cs.length} colunas` + (a === "event" ? " · uma linha por amostragem" : a === "occurrence" ? " · uma linha por táxon por amostragem" : " · uma linha por medida"));
+  abas.append("div").attr("class", "cols").selectAll("span").data(([a, cs]) => cs.map((c) => ({ a, ...c }))).join("span").attr("class", "col")
+    .style("background", (c) => COR[c.auto ? "auto" : c.req ? "req" : "opt"])
+    .attr("title", (c) => { const [d, como, ex] = termo(c.a, c.t); return `${d}\nComo preencher: ${como}\nExemplo: ${ex}`; })
+    .text((c) => c.t);
+  const dicas = [`samplingProtocol: ${E.metodos.map((m) => m.n).join(", ")}` + (E.outroMetodo ? " + linhas livres na aba protocolos para o método não listado" : "") + "."];
+  if (E.abas.measurementorfact) dicas.push(`measurementType: ${E.medidas.map((m) => m.n).join(", ") || "nenhuma medida pré-cadastrada"}` + (E.outraMedida ? " + linhas livres na aba medidas" : "") + ".");
+  dicas.push("IDs repetidos ou inexistentes ficam em vermelho.");
+  card.append("div").attr("class", "dicas").selectAll("p").data(dicas).join("p").attr("class", "dica").text((d) => d);
+  const nav = card.append("div").attr("class", "nav");
+  nav.append("button").attr("type", "button").attr("class", "btn").text("Voltar").on("click", () => { atual--; render(); });
+  nav.append("button").attr("type", "button").attr("class", "btn primary").attr("id", "baixar").text("Baixar planilha .xlsx").on("click", baixar);
+  card.append("p").attr("class", "status").attr("id", "status");
+}
+
+function render() {
+  const caminho = fluxo(resp);
+  const max = caminho.completo ? caminho.length : caminho.length - 1;
+  atual = Math.max(0, Math.min(atual, max));
+  progresso(caminho); trilha(caminho); arvore(caminho);
+  const c = d3.select("#cartao"); c.selectAll("*").remove();
+  if (atual < caminho.length) telaPergunta(c, caminho[atual], atual); else telaFinal(c);
+}
+
+// ---- download ----
+let downloads = null;
+if (window.claude && typeof window.claude.use === "function") window.claude.use("downloads").then((ns) => (downloads = ns)).catch(() => {});
+function nomeArquivo() { return `DwC_${grupoFinal(resp)}_${GRUPOS[grupoFinal(resp)].nome.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\W+/g, "-")}_template.xlsx`; }
+async function baixar() {
+  const st = d3.select("#status"); const btn = document.getElementById("baixar");
+  btn.disabled = true; st.text("Gerando a planilha…");
+  try {
+    const wb = await gerarTemplate(ExcelJS, JSON.parse(JSON.stringify(resp)));
+    const bytes = await ampliarComentarios(JSZip, await wb.xlsx.writeBuffer());
+    const blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    if (downloads) await downloads.save({ filename: nomeArquivo(), data: blob });
+    else { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nomeArquivo(); document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+    st.text(`${nomeArquivo()} gerado (${Math.round(blob.size / 1024)} KB).`);
+  } catch (err) {
+    st.text(err && err.code === "declined" ? "Download cancelado." : `Não foi possível gerar a planilha: ${err && (err.message || err.code)}`);
+  } finally { btn.disabled = false; }
+}
+
+window.addEventListener("resize", () => progresso(fluxo(resp)));
+render();
+</script>
+</body>
+</html>
